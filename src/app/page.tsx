@@ -6,11 +6,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { ArrowRight, LogIn, UserPlus, CheckCircle, BarChart3, Moon } from "lucide-react"
+import { useTheme } from "@/components/ThemeProvider"
+import { ArrowRight, LogIn, UserPlus, CheckCircle, BarChart3, Moon, Sun } from "lucide-react"
 
 export default function HomePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { theme, toggleTheme } = useTheme()
 
   // تحويل تلقائي لو مسجل دخول
   useEffect(() => {
@@ -45,6 +47,9 @@ export default function HomePage() {
                 إنشاء حساب
               </Button>
             </Link>
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
           </div>
         </div>
       </header>

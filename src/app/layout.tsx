@@ -1,16 +1,8 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import Providers from "@/components/Providers" // ← أضف ده
-
-const inter = Inter({ subsets: ["latin"] })
-
-export const metadata: Metadata = {
-  title: "TaskFlow",
-  description: "نظام إدارة مهام ومشاريع احترافي",
-}
-
 import { Noto_Sans_Arabic } from "next/font/google"
+import "./globals.css"
+import Providers from "@/components/Providers"
+import { ThemeProvider } from "@/components/ThemeProvider"
 
 const notoArabic = Noto_Sans_Arabic({
   subsets: ["arabic"],
@@ -19,16 +11,23 @@ const notoArabic = Noto_Sans_Arabic({
   display: "swap",
 })
 
+export const metadata: Metadata = {
+  title: "TaskFlow",
+  description: "نظام إدارة مهام ومشاريع احترافي",
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="ar" dir="rtl" className={`${notoArabic.variable}`}>
+    <html lang="ar" dir="rtl" suppressHydrationWarning className={`${notoArabic.variable}`}>
       <body className="font-noto-arabic antialiased">
         <Providers>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </Providers>
       </body>
     </html>
