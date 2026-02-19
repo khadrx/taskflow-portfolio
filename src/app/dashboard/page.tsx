@@ -13,26 +13,44 @@ import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { CalendarIcon, Plus, Trash2, Edit2, CheckCircle2, Clock, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
-import { useSession } from "next-auth/react"
-import { useEffect } from "react"
+import { useAuth } from "@/lib/AuthContext"
+import { useRouter } from "next/navigation"
+import { api } from "@/lib/api"
 
 const COLORS = ["#3b82f6", "#f59e0b", "#10b981"]
 
-export default function DashboardPage() {
-  const { tasks, addTask, updateTask, deleteTask, getUserTasksByStatus, getUserTasks } = useTaskStore()
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
 
-  const { data: session } = useSession()
-  const setCurrentUserId = useTaskStore(state => state.setCurrentUserId)
+export default function DashboardPage() {
+  const { token, isAuthenticated, isLoading: authLoading, logout } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    if (session?.user?.id) {
-      setCurrentUserId(session.user.id)
+    if (!authLoading && !isAuthenticated) {
+      toast.error("يرجى تسجيل الدخول أولاً")
+      router.replace("/login")
     }
-  }, [session, setCurrentUserId])
+  }, [authLoading, isAuthenticated, router])
+
+  const {
+    tasks,
+    setTasks,
+    addTask,
+    updateTask,
+    deleteTask,
+    getUserTasksByStatus,
+    getUserTasks
+  } = useTaskStore()
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -43,21 +61,57 @@ export default function DashboardPage() {
   })
 
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [pageLoading, setPageLoading] = useState(true)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!token || !isAuthenticated) return
+
+    const fetchTasks = async () => {
+      setPageLoading(true)
+      try {
+        const data = await api.getTasks()
+        setTasks(data)
+        console.log("Data من API:", data)
+        console.log("currentUserId:", useTaskStore.getState().currentUserId)
+        console.log("عدد المهام بعد الفلتر:", getUserTasks().length)
+        toast.success("تم جلب المهام بنجاح")
+      } catch (error: any) {
+        console.error("خطأ جلب المهام:", error)
+        toast.error(error.message || "خطأ في جلب المهام")
+      } finally {
+        setPageLoading(false)
+      }
+    }
+
+    fetchTasks()
+  }, [token, isAuthenticated, setTasks, getUserTasks])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newTask.title.trim()) return toast.error("العنوان مطلوب")
 
-    if (editingTask) {
-      updateTask(editingTask.id, newTask)
-      toast.success("تم تعديل المهمة بنجاح")
-      setEditingTask(null)
-    } else {
-      addTask(newTask)
-      toast.success("تم إضافة المهمة")
-    }
+    try {
+      if (editingTask) {
+        const updatedTask = await api.updateTask(editingTask.id, newTask)
+        updateTask(editingTask.id, updatedTask)
+        toast.success("تم تعديل المهمة بنجاح")
+        setEditingTask(null)
+      } else {
+        const createdTask = await api.createTask(newTask)
+        addTask(createdTask)
+        toast.success("تم إضافة المهمة بنجاح")
+      }
 
-    setNewTask({ title: "", description: "", status: "todo", priority: "medium", dueDate: undefined })
+      setNewTask({
+        title: "",
+        description: "",
+        status: "todo",
+        priority: "medium",
+        dueDate: undefined,
+      })
+    } catch (error: any) {
+      toast.error(error.message || "خطأ في حفظ المهمة")
+    }
   }
 
   const startEdit = (task: Task) => {
@@ -69,6 +123,18 @@ export default function DashboardPage() {
       dueDate: task.dueDate || undefined,
     })
     setEditingTask(task)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("متأكد من حذف المهمة؟")) return
+
+    try {
+      await api.deleteTask(id)
+      deleteTask(id)
+      toast.success("تم حذف المهمة")
+    } catch (error: any) {
+      toast.error(error.message || "خطأ في الحذف")
+    }
   }
 
   const getPriorityIcon = (priority: TaskPriority) => {
@@ -89,12 +155,10 @@ export default function DashboardPage() {
     { key: "done", label: "منتهية", icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> },
   ] as const
 
-  // إحصائيات (بعد الربط باليوزر)
-  const userTasks = getUserTasks()
   const todoCount = getUserTasksByStatus("todo").length
   const inProgressCount = getUserTasksByStatus("in-progress").length
   const doneCount = getUserTasksByStatus("done").length
-  const total = userTasks.length
+  const total = getUserTasks().length
   const completionRate = total > 0 ? Math.round((doneCount / total) * 100) : 0
 
   const pieData = [
@@ -103,16 +167,28 @@ export default function DashboardPage() {
     { name: "منتهية", value: doneCount, color: "#10b981" },
   ]
 
+  if (authLoading || pageLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl">جاري التحميل...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto py-10 px-4 max-w-7xl" dir="rtl">
       <div className="flex items-center justify-between mb-12">
         <h1 className="text-4xl font-bold">TaskFlow – لوحة التحكم</h1>
-        <div className="text-sm text-muted-foreground">
-          إجمالي مهامك: <span className="font-medium">{total}</span>
+        <div className="flex items-center gap-6">
+          <div className="text-sm text-muted-foreground">
+            إجمالي مهامك: <span className="font-medium">{total}</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={logout}>
+            تسجيل الخروج
+          </Button>
         </div>
       </div>
 
-      {/* إحصائيات سريعة */}
       <div className="grid md:grid-cols-4 gap-6 mb-12">
         <Card className="border-none shadow-sm">
           <CardContent className="p-6 text-center">
@@ -144,11 +220,10 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* رسم بياني دائري */}
       {total > 0 && (
         <Card className="mb-12 border-none shadow-lg">
           <CardHeader>
-            <CardTitle>توزيع مهامك</CardTitle>
+            <CardTitle>توزيع المهام</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64">
@@ -176,7 +251,6 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* نموذج إضافة / تعديل */}
       <Card className="mb-16 border-none shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
@@ -192,7 +266,7 @@ export default function DashboardPage() {
                 <Input
                   id="title"
                   value={newTask.title}
-                  onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                   placeholder="اكتب عنوان المهمة هنا..."
                   required
                 />
@@ -202,7 +276,7 @@ export default function DashboardPage() {
                 <Label>الأولوية</Label>
                 <Select
                   value={newTask.priority}
-                  onValueChange={v => setNewTask({ ...newTask, priority: v as any })}
+                  onValueChange={(v) => setNewTask({ ...newTask, priority: v as any })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الأولوية" />
@@ -221,7 +295,7 @@ export default function DashboardPage() {
                 <Label>الحالة</Label>
                 <Select
                   value={newTask.status}
-                  onValueChange={v => setNewTask({ ...newTask, status: v as any })}
+                  onValueChange={(v) => setNewTask({ ...newTask, status: v as any })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الحالة" />
@@ -253,7 +327,7 @@ export default function DashboardPage() {
                     <Calendar
                       mode="single"
                       selected={newTask.dueDate}
-                      onSelect={date => setNewTask({ ...newTask, dueDate: date })}
+                      onSelect={(date) => setNewTask({ ...newTask, dueDate: date })}
                       initialFocus
                       locale={ar}
                       dir="rtl"
@@ -268,19 +342,42 @@ export default function DashboardPage() {
               <Input
                 id="description"
                 value={newTask.description}
-                onChange={e => setNewTask({ ...newTask, description: e.target.value })}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 placeholder="تفاصيل إضافية عن المهمة..."
               />
             </div>
 
-            <Button type="submit" size="lg" className="w-full">
-              {editingTask ? "حفظ التعديلات" : "إضافة المهمة"}
-            </Button>
+            <div className="flex gap-4">
+              <Button type="submit" size="lg" className="flex-1">
+                {editingTask ? "حفظ التعديلات" : "إضافة المهمة"}
+              </Button>
+
+              {editingTask && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => {
+                    setEditingTask(null)
+                    setNewTask({
+                      title: "",
+                      description: "",
+                      status: "todo",
+                      priority: "medium",
+                      dueDate: undefined,
+                    })
+                    toast.info("تم الإلغاء ورجعنا لإضافة مهمة جديدة")
+                  }}
+                >
+                  إلغاء التعديل
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* الأعمدة الثلاثة */}
       <div className="grid md:grid-cols-3 gap-8">
         {statuses.map(({ key, label, icon }) => (
           <Card key={key} className="border-none shadow-lg">
@@ -297,7 +394,7 @@ export default function DashboardPage() {
                   لا توجد مهام هنا حاليًا
                 </div>
               ) : (
-                getUserTasksByStatus(key as any).map(task => (
+                getUserTasksByStatus(key as any).map((task) => (
                   <Card key={task.id} className="p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
@@ -327,7 +424,12 @@ export default function DashboardPage() {
                           <Edit2 className="h-4 w-4" />
                         </Button>
 
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteTask(task.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleDelete(task.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

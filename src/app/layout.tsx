@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
 import { Noto_Sans_Arabic } from "next/font/google"
 import "./globals.css"
-import Providers from "@/components/Providers"
 import { ThemeProvider } from "@/components/ThemeProvider"
+import { AuthProvider } from "@/lib/AuthContext"
+import { Toaster } from "sonner"   // ← ده الصح
 
 const notoArabic = Noto_Sans_Arabic({
   subsets: ["arabic"],
@@ -24,11 +25,20 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning className={`${notoArabic.variable}`}>
       <body className="font-noto-arabic antialiased">
-        <Providers>
-          <ThemeProvider>
+        <ThemeProvider>
+          <AuthProvider>
             {children}
-          </ThemeProvider>
-        </Providers>
+            <Toaster
+              richColors
+              position="top-center"
+              closeButton
+              duration={5000}
+              toastOptions={{
+                style: { fontFamily: "var(--font-noto-arabic)" },
+              }}
+            />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
