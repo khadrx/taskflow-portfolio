@@ -26,6 +26,7 @@ interface TaskStore {
   deleteTask: (id: string) => void
   getUserTasksByStatus: (status: TaskStatus) => Task[]
   getUserTasks: () => Task[]
+  setTasks: (newTasks: Task[]) => void
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({

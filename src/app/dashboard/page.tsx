@@ -1,6 +1,6 @@
 "use client"
 
-import { useTaskStore } from "@/lib/taskStore"
+import { useTaskStore, Task, TaskPriority, TaskStatus } from "@/lib/taskStore"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,14 +22,6 @@ import { useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 
 const COLORS = ["#3b82f6", "#f59e0b", "#10b981"]
-
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
-}
 
 export default function DashboardPage() {
   const { token, isAuthenticated, isLoading: authLoading, logout } = useAuth()
@@ -55,8 +47,8 @@ export default function DashboardPage() {
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
-    status: "todo" as const,
-    priority: "medium" as const,
+    status: "todo" as TaskStatus,
+    priority: "medium" as TaskPriority,
     dueDate: undefined as Date | undefined,
   })
 
@@ -86,33 +78,37 @@ export default function DashboardPage() {
     fetchTasks()
   }, [token, isAuthenticated, setTasks, getUserTasks])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newTask.title.trim()) return toast.error("العنوان مطلوب")
+  // 1. handleSubmit (حول الـid لـnumber وتحقق من null)
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  if (!newTask.title.trim()) return toast.error("العنوان مطلوب")
 
-    try {
-      if (editingTask) {
-        const updatedTask = await api.updateTask(editingTask.id, newTask)
-        updateTask(editingTask.id, updatedTask)
-        toast.success("تم تعديل المهمة بنجاح")
-        setEditingTask(null)
-      } else {
-        const createdTask = await api.createTask(newTask)
-        addTask(createdTask)
-        toast.success("تم إضافة المهمة بنجاح")
-      }
+  try {
+    if (editingTask) {
+      const numericId = Number(editingTask.id)
+      if (isNaN(numericId)) throw new Error("معرف المهمة غير صالح")
 
-      setNewTask({
-        title: "",
-        description: "",
-        status: "todo",
-        priority: "medium",
-        dueDate: undefined,
-      })
-    } catch (error: any) {
-      toast.error(error.message || "خطأ في حفظ المهمة")
+      const updatedTask = await api.updateTask(numericId, newTask)
+      updateTask(editingTask.id, updatedTask)  // ← الـstore يقبل string أو غيّر نوعه
+      toast.success("تم تعديل المهمة بنجاح")
+      setEditingTask(null)
+    } else {
+      const createdTask = await api.createTask(newTask)
+      addTask(createdTask)
+      toast.success("تم إضافة المهمة بنجاح")
     }
+
+    setNewTask({
+      title: "",
+      description: "",
+      status: "todo" as TaskStatus,
+      priority: "medium" as TaskPriority,
+      dueDate: undefined,
+    })
+  } catch (error: any) {
+    toast.error(error.message || "خطأ في حفظ المهمة")
   }
+}
 
   const startEdit = (task: Task) => {
     setNewTask({
@@ -129,8 +125,11 @@ export default function DashboardPage() {
     if (!confirm("متأكد من حذف المهمة؟")) return
 
     try {
-      await api.deleteTask(id)
-      deleteTask(id)
+      const numericId = Number(id)
+      if (isNaN(numericId)) throw new Error("معرف المهمة غير صالح")
+
+      await api.deleteTask(numericId)  // ← ابعت number للـAPI
+      deleteTask(id)  // ← احذف من الـstore بـstring
       toast.success("تم حذف المهمة")
     } catch (error: any) {
       toast.error(error.message || "خطأ في الحذف")
@@ -237,7 +236,7 @@ export default function DashboardPage() {
                     outerRadius={90}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -276,7 +275,7 @@ export default function DashboardPage() {
                 <Label>الأولوية</Label>
                 <Select
                   value={newTask.priority}
-                  onValueChange={(v) => setNewTask({ ...newTask, priority: v as any })}
+                  onValueChange={(v) => setNewTask({ ...newTask, priority: v as TaskPriority })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الأولوية" />
@@ -295,7 +294,7 @@ export default function DashboardPage() {
                 <Label>الحالة</Label>
                 <Select
                   value={newTask.status}
-                  onValueChange={(v) => setNewTask({ ...newTask, status: v as any })}
+                  onValueChange={(v) => setNewTask({ ...newTask, status: v as TaskStatus })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الحالة" />
@@ -347,33 +346,9 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex gap-4">
-              <Button type="submit" size="lg" className="flex-1">
-                {editingTask ? "حفظ التعديلات" : "إضافة المهمة"}
-              </Button>
-
-              {editingTask && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="flex-1"
-                  onClick={() => {
-                    setEditingTask(null)
-                    setNewTask({
-                      title: "",
-                      description: "",
-                      status: "todo",
-                      priority: "medium",
-                      dueDate: undefined,
-                    })
-                    toast.info("تم الإلغاء ورجعنا لإضافة مهمة جديدة")
-                  }}
-                >
-                  إلغاء التعديل
-                </Button>
-              )}
-            </div>
+            <Button type="submit" size="lg" className="w-full">
+              {editingTask ? "حفظ التعديلات" : "إضافة المهمة"}
+            </Button>
           </form>
         </CardContent>
       </Card>
@@ -385,16 +360,16 @@ export default function DashboardPage() {
               {icon}
               <CardTitle>{label}</CardTitle>
               <Badge variant="secondary" className="ml-auto">
-                {getUserTasksByStatus(key as any).length}
+                {getUserTasksByStatus(key as TaskStatus).length}
               </Badge>
             </CardHeader>
             <CardContent className="space-y-4 min-h-[400px]">
-              {getUserTasksByStatus(key as any).length === 0 ? (
+              {getUserTasksByStatus(key as TaskStatus).length === 0 ? (
                 <div className="h-full flex items-center justify-center text-muted-foreground">
                   لا توجد مهام هنا حاليًا
                 </div>
               ) : (
-                getUserTasksByStatus(key as any).map((task) => (
+                getUserTasksByStatus(key as TaskStatus).map((task) => (
                   <Card key={task.id} className="p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
