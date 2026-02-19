@@ -78,37 +78,36 @@ export default function DashboardPage() {
     fetchTasks()
   }, [token, isAuthenticated, setTasks, getUserTasks])
 
-  // 1. handleSubmit (حول الـid لـnumber وتحقق من null)
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  if (!newTask.title.trim()) return toast.error("العنوان مطلوب")
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newTask.title.trim()) return toast.error("العنوان مطلوب")
 
-  try {
-    if (editingTask) {
-      const numericId = Number(editingTask.id)
-      if (isNaN(numericId)) throw new Error("معرف المهمة غير صالح")
+    try {
+      if (editingTask) {
+        const numericId = Number(editingTask.id)
+        if (isNaN(numericId)) throw new Error("معرف المهمة غير صالح")
 
-      const updatedTask = await api.updateTask(numericId, newTask)
-      updateTask(editingTask.id, updatedTask)  // ← الـstore يقبل string أو غيّر نوعه
-      toast.success("تم تعديل المهمة بنجاح")
-      setEditingTask(null)
-    } else {
-      const createdTask = await api.createTask(newTask)
-      addTask(createdTask)
-      toast.success("تم إضافة المهمة بنجاح")
+        const updatedTask = await api.updateTask(numericId, newTask)
+        updateTask(editingTask.id, updatedTask)
+        toast.success("تم تعديل المهمة بنجاح")
+        setEditingTask(null)
+      } else {
+        const createdTask = await api.createTask(newTask)
+        addTask(createdTask)
+        toast.success("تم إضافة المهمة بنجاح")
+      }
+
+      setNewTask({
+        title: "",
+        description: "",
+        status: "todo" as TaskStatus,
+        priority: "medium" as TaskPriority,
+        dueDate: undefined,
+      })
+    } catch (error: any) {
+      toast.error(error.message || "خطأ في حفظ المهمة")
     }
-
-    setNewTask({
-      title: "",
-      description: "",
-      status: "todo" as TaskStatus,
-      priority: "medium" as TaskPriority,
-      dueDate: undefined,
-    })
-  } catch (error: any) {
-    toast.error(error.message || "خطأ في حفظ المهمة")
   }
-}
 
   const startEdit = (task: Task) => {
     setNewTask({
@@ -128,8 +127,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       const numericId = Number(id)
       if (isNaN(numericId)) throw new Error("معرف المهمة غير صالح")
 
-      await api.deleteTask(numericId)  // ← ابعت number للـAPI
-      deleteTask(id)  // ← احذف من الـstore بـstring
+      await api.deleteTask(numericId)
+      deleteTask(id)
       toast.success("تم حذف المهمة")
     } catch (error: any) {
       toast.error(error.message || "خطأ في الحذف")
@@ -150,12 +149,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   const statuses = [
     { key: "todo", label: "قيد الانتظار", icon: <Clock className="h-5 w-5 text-blue-500" /> },
-    { key: "in-progress", label: "جاري العمل", icon: <Edit2 className="h-5 w-5 text-orange-500" /> },
+    { key: "in_progress", label: "جاري العمل", icon: <Edit2 className="h-5 w-5 text-orange-500" /> },
     { key: "done", label: "منتهية", icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> },
   ] as const
 
   const todoCount = getUserTasksByStatus("todo").length
-  const inProgressCount = getUserTasksByStatus("in-progress").length
+  const inProgressCount = getUserTasksByStatus("in_progress").length // ← غيّر هنا
   const doneCount = getUserTasksByStatus("done").length
   const total = getUserTasks().length
   const completionRate = total > 0 ? Math.round((doneCount / total) * 100) : 0
@@ -301,7 +300,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todo">قيد الانتظار</SelectItem>
-                    <SelectItem value="in-progress">جاري العمل</SelectItem>
+                    <SelectItem value="in_progress">جاري العمل</SelectItem>
                     <SelectItem value="done">منتهية</SelectItem>
                   </SelectContent>
                 </Select>

@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,24 +12,9 @@ import { useTheme } from "@/components/ThemeProvider"
 import { ArrowRight, LogIn, UserPlus, CheckCircle, BarChart3, Moon, Sun } from "lucide-react"
 
 export default function HomePage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
 
-  // تحويل تلقائي لو مسجل دخول
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/dashboard")
-    }
-  }, [status, router])
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        جاري التحميل...
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30" dir="rtl">

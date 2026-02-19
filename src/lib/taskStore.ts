@@ -1,13 +1,14 @@
 "use client"
 
 import { create } from "zustand"
+import { v4 as uuidv4 } from 'uuid'
 
-export type TaskStatus = "todo" | "in-progress" | "done"
+export type TaskStatus = "todo" | "in_progress" | "done"
 export type TaskPriority = "low" | "medium" | "high"
 
 export interface Task {
   id: string
-  owner_id: string          // ← إضافة مهمة
+  owner_id: string
   title: string
   description?: string
   status: TaskStatus
@@ -44,7 +45,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         {
           ...task,
           owner_id: state.currentUserId,  // ← غيّر userId لـowner_id
-          id: crypto.randomUUID(),
+          id: uuidv4(),
           created_at: new Date(),
           updated_at: new Date(),
         },
