@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { useTaskStore } from "@/lib/taskStore"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
 interface User {
   id: number
