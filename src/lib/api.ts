@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://localhost:8000";
 const getHeaders = () => {
   const token = localStorage.getItem("token");
   return {
