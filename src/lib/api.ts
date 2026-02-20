@@ -1,5 +1,10 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
+// أضف ده تحتيه مباشرة (هيحوّل http لـhttps في الـproduction)
+const FINAL_API_BASE = API_BASE.startsWith("http://") && process.env.NODE_ENV === "production"
+  ? API_BASE.replace("http://", "https://")
+  : API_BASE;
+
 const getHeaders = () => {
   const token = localStorage.getItem("token");
   return {
@@ -10,7 +15,7 @@ const getHeaders = () => {
 
 export const api = {
   register: async (data: { email: string; password: string; name: string }) => {
-    const res = await fetch(`${API_BASE}/auth/register`, {
+    const res = await fetch(`${FINAL_API_BASE}/auth/register`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -23,7 +28,7 @@ export const api = {
   },
 
   login: async (data: { email: string; password: string }) => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetch(`${FINAL_API_BASE}/auth/login`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ email: data.email, password: data.password }),
@@ -38,13 +43,13 @@ export const api = {
   },
 
   getTasks: async () => {
-    const res = await fetch(`${API_BASE}/tasks`, { headers: getHeaders() });
+    const res = await fetch(`${FINAL_API_BASE}/tasks`, { headers: getHeaders() });
     if (!res.ok) throw new Error("خطأ في جلب المهام");
     return res.json();
   },
 
   createTask: async (task: any) => {
-    const res = await fetch(`${API_BASE}/tasks`, {
+    const res = await fetch(`${FINAL_API_BASE}/tasks`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(task),
@@ -54,7 +59,7 @@ export const api = {
   },
 
   updateTask: async (id: number, task: any) => {
-    const res = await fetch(`${API_BASE}/tasks/${id}`, {
+    const res = await fetch(`${FINAL_API_BASE}/tasks/${id}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(task),
@@ -64,7 +69,7 @@ export const api = {
   },
 
   deleteTask: async (id: number) => {
-    const res = await fetch(`${API_BASE}/tasks/${id}`, {
+    const res = await fetch(`${FINAL_API_BASE}/tasks/${id}`, {
       method: "DELETE",
       headers: getHeaders(),
     });

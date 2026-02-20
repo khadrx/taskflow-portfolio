@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TaskFlow – نظام إدارة مهام Full-Stack
 
-## Getting Started
+TaskFlow هو مشروع بورتفوليو شخصي كامل (MVP) لإدارة المهام اليومية، مبني بتقنيات حديثة ونظيفة جدًا.  
+الهدف: بناء نظام قوي، سريع، ومنظم يدعم الـRTL العربي، dark/light mode، وجاهز للعمل remote.
 
-First, run the development server:
+### Live Demo
+- **Frontend (Next.js)**: https://taskflow-portfolio.vercel.app
+- **Backend API (FastAPI)**: https://taskflow-backend-production-ea5d.up.railway.app/docs
+- **Swagger Docs**: https://taskflow-backend-production-ea5d.up.railway.app/docs
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### التقنيات المستخدمة
+**Frontend (Next.js 15 – App Router)**
+- TypeScript
+- Tailwind CSS + shadcn/ui
+- Zustand (state management)
+- Sonner (toasts)
+- Recharts (pie chart & stats)
+- Date-fns + Arabic locale
+- RTL support + dark/light mode
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Backend (FastAPI)**
+- Python 3.11+
+- SQLAlchemy + Alembic (migrations)
+- PostgreSQL
+- JWT Authentication (PyJWT + passlib)
+- Pydantic v2
+- Uvicorn
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**DevOps**
+- Vercel (frontend deployment)
+- Railway (backend + PostgreSQL)
+- GitHub Actions (CI/CD – optional)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Features الرئيسية
+- تسجيل / تسجيل دخول بإيميل وباسورد
+- حماية كاملة للـroutes بـJWT
+- CRUD كامل للمهام (مرتبطة بكل يوزر – owner_id)
+- لوحة تحكم (dashboard) مع:
+  - إحصائيات فورية (عدد المهام، نسبة الإنجاز)
+  - رسم بياني دائري (Pie Chart)
+  - فلتر حسب الحالة (todo / in_progress / done)
+  - إضافة/تعديل/حذف مع تأكيد وحذف
+  - RTL عربي ممتاز + dark/light mode
+- Toasts (نجاح/خطأ) مع Sonner
+- تحميل حالة (loading spinner)
+- دعم dark/light mode تلقائي
 
-## Learn More
+### كيفية التشغيل محليًا
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Backend**
+1. `cd taskflow-backend`
+2. `python -m venv .venv`
+3. `source .venv/bin/activate` (أو `.venv\Scripts\activate` على ويندوز)
+4. `pip install -r requirements.txt`
+5. أنشئ `.env` وأضف:
