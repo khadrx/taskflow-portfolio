@@ -6,6 +6,8 @@ import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { useTaskStore } from "@/lib/taskStore"
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+
 interface User {
   id: number
   email: string
@@ -41,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async (tok: string) => {
     try {
-      const res = await fetch("http://192.168.1.8:8000/auth/me", {
+      const res = await fetch(`${API_BASE}/auth/me`, {
         headers: {
           Authorization: `Bearer ${tok}`,
         },
