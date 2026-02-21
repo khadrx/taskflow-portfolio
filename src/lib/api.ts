@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://taskflow-backend-production-ea5d.up.railway.app";
+const API_BASE =  "https://taskflow-backend-production-ea5d.up.railway.app";
 const getHeaders = () => {
   const token = localStorage.getItem("token");
   return {
@@ -37,6 +37,7 @@ export const api = {
   },
 
   getTasks: async () => {
+    console.log("API_BASE الفعلي:", API_BASE);
     const res = await fetch(`${API_BASE}/tasks`, { headers: getHeaders() });
     if (!res.ok) throw new Error("خطأ في جلب المهام");
     return res.json();
