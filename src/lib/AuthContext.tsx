@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { useTaskStore } from "@/lib/taskStore"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
 interface User {
   id: number
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUserId(data.id.toString())
     } catch (error) {
       console.error("فشل جلب بيانات اليوزر", error)
-      logout() // لو الـtoken مش صالح، يسجّل خروج
+      logout()
     }
   }
 
@@ -67,12 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("token", data.access_token)
       setToken(data.access_token)
 
-      // جلب بيانات اليوزر فورًا
       await fetchUser(data.access_token)
 
-      // لو الـuser اتعيّن → يعني الـtoken صالح
       toast.success("تم تسجيل الدخول بنجاح")
-      router.replace("/dashboard") // replace بدل push عشان ما يبقاش في back button للـlogin
+      router.replace("/dashboard")
     } catch (error: any) {
       toast.error(error.message || "خطأ في تسجيل الدخول")
       throw error
@@ -89,8 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.replace("/login")
   }
 
-  // التعديل المهم هنا: isAuthenticated يعتمد على الـtoken بس في البداية
-  // وبعدين يتحقق من الـuser
+
   const isAuthenticated = !!token
 
   return (
