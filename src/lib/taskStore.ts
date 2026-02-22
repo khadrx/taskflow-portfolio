@@ -35,7 +35,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   currentUserId: null,
 
   setCurrentUserId: (id) => set({ currentUserId: id }),
-  setTasks: (newTasks: any) => set({ tasks: newTasks }), // ← أضف ده
+  setTasks: (newTasks: any) => set({ tasks: newTasks }),
 
   addTask: (task) => set((state) => {
     if (!state.currentUserId) return state
@@ -44,7 +44,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         ...state.tasks,
         {
           ...task,
-          owner_id: state.currentUserId,  // ← غيّر userId لـowner_id
+          owner_id: state.currentUserId,
           id: uuidv4(),
           created_at: new Date(),
           updated_at: new Date(),

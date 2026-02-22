@@ -38,13 +38,13 @@ export const api = {
 
   getTasks: async () => {
     console.log("API_BASE الفعلي:", API_BASE);
-    const res = await fetch(`${API_BASE}/tasks`, { headers: getHeaders() });
+    const res = await fetch(`${API_BASE}/tasks/`, { headers: getHeaders() });
     if (!res.ok) throw new Error("خطأ في جلب المهام");
     return res.json();
   },
 
   createTask: async (task: any) => {
-    const res = await fetch(`${API_BASE}/tasks`, {
+    const res = await fetch(`${API_BASE}/tasks/`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(task),
